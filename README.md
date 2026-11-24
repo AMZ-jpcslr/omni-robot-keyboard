@@ -1,8 +1,8 @@
 # 全方向ロボットの矢印キー操作
 
-## 起動手順（Windows）
+このリポジトリには、全方向ロボットのADuC814用ファームウェアと、USB経由で操作するPythonプログラムが含まれます。実機に書き込み済みの版は [omni_front1_v4_sensor2.ihx](firmware/omni_front1_v4_sensor2.ihx)、PC側の入口は [keyboard_drive.py](keyboard_drive.py) です。
 
-このリポジトリには、全方向ロボットのADuC814用ファームウェアと、USB経由で操作するWindows用Pythonプログラムが含まれます。実機に書き込み済みの版は [omni_front1_v4_sensor2.ihx](firmware/omni_front1_v4_sensor2.ihx)、PC側の入口は [keyboard_drive.py](keyboard_drive.py) です。
+## 起動手順（Windows）
 
 1. このリポジトリをクローンするか、GitHubの「Code → Download ZIP」で取得して展開します。
 2. Python（このプロジェクトでは3.14を使用）をインストールし、このREADMEのあるフォルダーで `python -m pip install -r requirements.txt` を実行します。
@@ -10,6 +10,42 @@
 4. 実機を操作するにはUSBを接続し、本体電源OFFの状態でスイッチを **Load** に合わせ、電源を入れて `実機キー操作.cmd` を起動します。操作画面をクリックしてからキーを押します。別のPCではCOM番号が変わるため、通常は自動検出を使います。
 
 既存機の操作は手順4で開始できます。ファームウェアを再導入する場合は、本体電源OFF → **Write** → ONの順で起動してから、実際のCOM番号を指定して `python firmware/program_aduc814.py --port COM12 --write firmware/omni_front1_v4_sensor2.ihx` を実行します。この操作は基板のプログラム領域を上書きします。完了後は電源OFF → **Load** → ONで起動します。
+
+## Macでの起動とUSB操作
+
+### 初回セットアップ
+
+macOS用のPython 3.14をインストールし、ターミナルで次を実行します。ZIPで取得した場合は、展開してREADMEのあるフォルダーに移動し、3行目から実行します。[Python公式のmacOSインストーラー](https://www.python.org/downloads/macos/)
+
+```sh
+git clone https://github.com/AMZ-jpcslr/omni-robot-keyboard.git
+cd omni-robot-keyboard
+python3.14 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+次回からは、このフォルダーで `source .venv/bin/activate` を実行します。
+
+### シミュレーターと実機の起動
+
+1. **Macだけで操作を試す**には `python keyboard_drive.py` を実行します。操作画面をクリックし、移動キーをすべて離した状態で **Spaceを一度押して離す**と操作できます。画面に戻ったときも同じ手順で再開します。
+2. **実機を操作する**には、シミュレーターをEscで閉じ、ロボットのUSBケーブルをMacにつなぎます。USB-C端子のみのMacではデータ通信対応の変換アダプターを使います。本体電源OFF → **Load（実行）** → ONの順で起動し、`python keyboard_drive.py --aduc814` を実行します。
+3. 画面に「実機操作」とポート名が表示されたら、手順1と同じくSpaceで操作を開始します。矢印・WASDで移動、Q/Eで旋回、Spaceで停止、Escで終了します。斜め移動と旋回の同時入力にも対応します。
+
+**USBを自動検出できない場合**は `python -m serial.tools.list_ports -v` でポートを一覧表示します。USBを抜き差しして増えた `/dev/cu.*` のうち、`10C4:EA60` の機器を選びます。たとえばデバイス名が `/dev/cu.SLAB_USBtoUART` なら、次のコマンドで起動します。機器が一覧に現れない場合はケーブルを確認し、使用中のmacOSに対応するCP210x VCPドライバーを確認してください。[pySerialのポート確認手順](https://pyserial.readthedocs.io/en/latest/tools.html)・[Silicon Labs公式ドライバー](https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers)
+
+```sh
+python keyboard_drive.py --aduc814 --port /dev/cu.SLAB_USBtoUART
+```
+
+**ファームウェアを再導入する場合**は、操作画面を閉じ、本体電源OFF → **Write（書き込み）** → ONにします。以下のポート名を実際のものに置き換えます。このコマンドはプログラム領域を上書きします。完了後は電源OFF → **Load** → ONで実行します。
+
+```sh
+python firmware/program_aduc814.py --port /dev/cu.SLAB_USBtoUART --write firmware/omni_front1_v4_sensor2.ihx
+```
+
+Mac向けのキー入力処理は模擬入力で確認しています。MacとロボットをUSB接続した走行試験は未実施です。
 
 ## ①を前にした元の基板の矢印キー操作
 

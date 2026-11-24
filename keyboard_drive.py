@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+import sys
 import tkinter as tk
 from time import monotonic
 
@@ -118,7 +119,9 @@ class Controller:
 
 
 def run_window(port=None, frames=None, repeat=False, turn_keys=("q", "e"), guarded=False):
-    import ctypes
+    windows = sys.platform == "win32"
+    if windows:
+        import ctypes
 
     root = tk.Tk()
     root.title("全方向ロボット")
@@ -141,6 +144,8 @@ def run_window(port=None, frames=None, repeat=False, turn_keys=("q", "e"), guard
                   f"{turn_keys[1].upper()} で右旋回")
     if MIXED[0] in frames:
         hints += "（移動中も可）"
+    if not windows:
+        hints += "\n画面を選んだら、移動キーを離して Space を押して離すと操作開始"
     tk.Label(root, text=hints + "\nSpace で停止　／　Esc で終了").pack(pady=(0, 16))
     failed = False
 
@@ -218,13 +223,18 @@ def run_window(port=None, frames=None, repeat=False, turn_keys=("q", "e"), guard
     if extended:
         virtual_keys.update({key: ord(key.upper()) for key in turn_keys})
     active = False
+    waiting_for_space = False
 
     def activate(event):
-        nonlocal active
+        nonlocal active, waiting_for_space
         active = True
-        control.keys = {key for key, vk in virtual_keys.items()
-                        if ctypes.windll.user32.GetAsyncKeyState(vk) & 0x8000}
-        control.blocked = bool(control.keys)
+        if windows:
+            control.keys = {key for key, vk in virtual_keys.items()
+                            if ctypes.windll.user32.GetAsyncKeyState(vk) & 0x8000}
+            control.blocked = bool(control.keys)
+        else:
+            control.suspend()
+            waiting_for_space = True
 
     def deactivate(event):
         nonlocal active
@@ -232,7 +242,13 @@ def run_window(port=None, frames=None, repeat=False, turn_keys=("q", "e"), guard
         control.suspend()
 
     def on_key(event, down):
+        nonlocal waiting_for_space
         if active and not failed:
+            if waiting_for_space:
+                # Keep track of held keys, but inhibit motion until an explicit re-arm.
+                control.blocked = True
+                if event.keysym == "space" and not down and "space" in control.keys:
+                    waiting_for_space = False
             control.change(event.keysym, down)
 
     root.bind("<FocusIn>", activate)
