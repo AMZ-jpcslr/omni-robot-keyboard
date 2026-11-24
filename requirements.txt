@@ -1,0 +1,2 @@
+pyserial==3.5
+pywasm==2.2.3
