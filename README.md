@@ -1,6 +1,6 @@
 # 全方向ロボットの矢印キー操作
 
-## メンバー向けの起動手順（Windows）
+## 起動手順（Windows）
 
 このリポジトリには、全方向ロボットのADuC814用ファームウェアと、USB経由で操作するWindows用Pythonプログラムが含まれます。実機に書き込み済みの版は [omni_front1_v4_sensor2.ihx](firmware/omni_front1_v4_sensor2.ihx)、PC側の入口は [keyboard_drive.py](keyboard_drive.py) です。
 
